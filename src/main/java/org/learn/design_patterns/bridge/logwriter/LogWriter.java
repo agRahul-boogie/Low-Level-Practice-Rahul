@@ -1,4 +1,4 @@
-package org.example.design_patterns.bridge.logwriter;
+package org.learn.design_patterns.bridge.logwriter;
 
 public interface LogWriter {
 

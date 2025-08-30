@@ -1,4 +1,4 @@
-package org.example.design_patterns.adapter;
+package org.learn.design_patterns.adapter;
 
 public class PaypalPayment implements PaymentProcessor{
 

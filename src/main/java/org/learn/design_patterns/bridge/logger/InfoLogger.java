@@ -1,6 +1,6 @@
-package org.example.design_patterns.bridge.logger;
+package org.learn.design_patterns.bridge.logger;
 
-import org.example.design_patterns.bridge.logwriter.LogWriter;
+import org.learn.design_patterns.bridge.logwriter.LogWriter;
 
 public class InfoLogger extends Logger {
     public InfoLogger(LogWriter logWriter) {
