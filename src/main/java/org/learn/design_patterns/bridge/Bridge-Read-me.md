@@ -1,5 +1,16 @@
 # 🏗 Bridge Pattern – Backend Example
 
+## 📝 Quick Revision (Layman’s Definition + Analogy)
+
+- **Definition**: Bridge Pattern is about **separating abstraction from implementation so both can vary independently**.
+- **Analogy**: Think of a **TV remote**:
+   - The remote = Abstraction
+   - The actual TV = Implementation
+   - You can swap remotes or TVs independently, but they still work together via a “bridge.”
+
+👉 In backend terms:  
+If you have `ReportGenerator` (abstraction) and multiple output formats (PDF, Excel, HTML = implementations), the bridge lets you extend **both sides independently**.
+
 ## 🔹 Problem Statement  
 You are designing a **logging system** for your microservices.  
 

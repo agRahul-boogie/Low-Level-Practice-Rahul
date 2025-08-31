@@ -1,5 +1,15 @@
 # Design Pattern Practice Problems
 
+## 📝 Quick Revision (Layman’s Definition + Analogy)
+
+- **Definition**: Adapter Pattern is used to **make two incompatible interfaces work together**.
+- **Analogy**: Think of a **travel adapter**:
+    - Your laptop charger plug doesn’t fit the socket.
+    - The adapter converts it so both can connect.
+
+👉 In backend terms:  
+If your app expects `PaymentProcessor` but a library provides `StripePayment`, you create an **Adapter** (`StripePaymentAdapter`) so your app can still talk to Stripe without changing your code.
+
 ## Adapter Pattern – Problem 1
 
 **Problem**  

@@ -6,7 +6,7 @@ It’s used for tree-like structures where a whole is made up of parts, and the 
 
 If we have a hierarchy where
 * **Base** objects exist (simple things), and
-* **Complex** objects are formed by combining those base objects,
+* **Complex** objects are formed by combining those base and complex objects,
 
 then instead of making the caller treat them differently, we let the complex object implement the same interface as the base.
 This way, the caller always deals with one common interface, making the design simpler and more consistent.
