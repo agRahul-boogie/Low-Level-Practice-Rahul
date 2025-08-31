@@ -55,4 +55,4 @@ Mentioned in directory
 * Remote interface will take device as input and based on its method provide functionality in abstract class
 * Or it can provide more or less functionality in sub-classes(Remote).
 
-![Alt text](/src/main/java/org/example/design_patterns/bridge/BridgeExample.png)
+![Alt text](/src/main/java/org/learn/design_patterns/bridge/BridgeExample.png)

@@ -29,7 +29,7 @@ Below are signs represented various access level of attribute/methods
 ### Other symbols which we should know
 
 
-![Alt text](/src/main/java/org/example/generic/UmlSigns.png)
+![Alt text](/src/main/java/org/learn/generic/UmlSigns.png)
 
 
 A -----> B   -----> meaninng A is simply implementing B
@@ -45,7 +45,7 @@ second last: aggregation implies a relationship where the child can exist indepe
 
 last: Composition example : Room doesn’t exist meaningfully without a House.
 
-![Alt text](/src/main/java/org/example/generic/Interface.png)
+![Alt text](/src/main/java/org/learn/generic/Interface.png)
 Representation of interface and it's methods above
 
 --------------------------------
