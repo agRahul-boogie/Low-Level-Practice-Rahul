@@ -80,6 +80,101 @@
 - **RabbitMQ** – Traditional message broker (AMQP) with flexible routing via exchanges, pushing
   messages to consumers and deleting them once acked.
 
+### Kafka Deep Dive (Interview Notes)
+
+*Video:* [Kafka System Design Deep Dive](https://www.youtube.com/watch?v=DU8o-OTeoCc)  
+*Matching walkthrough:* [Hello Interview –
+Kafka](https://www.hellointerview.com/learn/system-design/deep-dives/kafka)
+
+- **Kafka** – A distributed event-streaming platform used as a message queue or as a durable log for
+  stream processing.
+- **Broker** – A Kafka server that stores partitions and serves producers and consumers; a cluster
+  contains multiple brokers.
+- **Topic** – A logical grouping of messages that producers write to and consumers subscribe to.
+- **Partition** – An ordered, immutable, append-only log; partitions let Kafka distribute data and
+  process messages in parallel.
+- **Producer / Consumer** – Producers write records to topics; consumers pull records from topics.
+- **Consumer Group** – Consumers that share work; each partition is assigned to one consumer in the
+  group at a time.
+  - Useful parallelism is capped by the number of partitions; extra consumers in the group sit idle.
+
+- **Record Fields** – A Kafka record can contain a key, value, timestamp and headers; the key
+  commonly determines its partition.
+- **Partition Key & Ordering** – Messages with the same key go to the same partition and are
+  processed in order; Kafka does not guarantee a total order across a topic.
+  - Choose a key that keeps related events together (e.g. events for one match or one user) while
+    distributing load evenly.
+  - Without a key, records follow the producer's default partitioning behavior; don't rely on
+    per-entity ordering in that case.
+- **Example: World Cup Events** – Use `match_id` as the key so a match's goals, bookings and
+  substitutions land on one partition and are processed in order.
+
+![Hello Interview's Kafka example showing related match events kept together by their key.](https://www.hellointerview.com/_next/static/media/pLtrHCXAYajL.2y5vzt2r8z--e.svg?dpl=0600a1c7ebfc277efd77678f256c708aafc36e56)
+
+*Source: [Hello Interview Kafka walkthrough](https://www.hellointerview.com/learn/system-design/deep-dives/kafka)*
+
+![Hello Interview's Kafka consumer group example showing work shared across consumers.](https://www.hellointerview.com/_next/static/media/Dsy3c_9m61cC.3b7rre514npgr.svg?dpl=0600a1c7ebfc277efd77678f256c708aafc36e56)
+
+*Source: [Hello Interview Kafka walkthrough](https://www.hellointerview.com/learn/system-design/deep-dives/kafka)*
+
+- **Offset** – A record's sequential position within its partition; consumers use offsets to track
+  progress and resume after a restart.
+  - Commit the offset after the logical work is complete, so a crash does not mark unprocessed work
+    as finished.
+  - If processing succeeds but the offset commit fails, the record can be processed again; consumers
+    should handle duplicates.
+
+- **Queue vs. Stream** – A consumer group shares queue-like work; separate consumer groups can each
+  read and replay the same retained topic as a stream.
+- **When Kafka Fits**
+  - **Async Work** – Buffer slow work, such as a video-transcoding job; keep the video in object
+    storage and put its location in Kafka.
+  - **Ordered Processing** – Queue related events under one key, such as people waiting for access
+    to popular ticket sales.
+  - **Decoupling** – Let producers and consumers scale independently, such as accepting and running
+    online-code submissions.
+  - **Stream Processing / Pub-Sub** – Continuously process events or let multiple independent groups
+    consume the same event stream.
+
+- **Scaling** – Estimate throughput and storage first; then add brokers and ensure topics have
+  enough partitions to use them.
+  - The walkthrough gives a single-broker estimate of about 1 TB and up to 1M messages per second,
+    explicitly as a rough, hardware- and message-size-dependent ballpark.
+  - Partition-key choice is the main design decision: spread load while keeping events that need
+    ordering together.
+- **Hot Partition** – A skewed key (e.g. a very popular ad ID) can overwhelm one partition while
+  others remain underused.
+  - **No Key** – Can spread load when ordering is unnecessary, but gives up per-entity ordering.
+  - **Salting / Compound Key** – Add a random suffix or another dimension to spread a hot entity's
+    traffic; aggregation and ordering across those partitions become more complex.
+  - **Back Pressure** – Slow producers when a partition is overloaded or consumer lag grows too
+    high.
+  - Managed services such as Confluent Cloud or AWS MSK handle much of the broker operations, but
+    the partition-key choice still matters.
+
+- **Replication and Durability** – Each partition has a leader replica and follower replicas on
+  other brokers; a follower can take over if the leader fails.
+  - **Replication Factor** – Number of replicas for a partition; three total replicas (one leader
+    and two followers) is a common setup.
+  - **`acks=all`** – Wait for all in-sync replicas to acknowledge a write before acknowledging it to
+    the producer; this favors durability over latency.
+- **Consumer Failure** – Kafka can reassign partitions in a consumer group when a consumer fails;
+  the replacement continues from the committed offset, with possible reprocessing since the last
+  commit.
+- **Producer Retries** – Retry transient write failures and enable idempotent producer mode to
+  prevent duplicate records from retries.
+- **Exactly-Once** – Idempotent producers and Kafka transactions can provide exactly-once semantics
+  for supported Kafka workflows; external side effects need their own idempotency or coordination.
+- **Consumer Retries and DLQ** – Implement retry handling at the application level, often with a
+  retry topic; move repeatedly failing records to a dead-letter topic for investigation.
+- **Throughput Optimizations** – Batch records to reduce request overhead and compress them to
+  reduce bytes sent over the network.
+- **Retention** – Topic retention controls how long or how much data stays in the log; the
+  walkthrough describes a seven-day default, which can be configured per topic.
+
+- *Interview focus:* Explain the partition key and ordering first, then cover scaling, hot
+  partitions, replication/acks, offset-commit timing, retries and retention as relevant.
+
 ## Caching
 
 - **Cache** – Temporary, fast storage (usually in memory) that keeps recently or frequently used
@@ -197,6 +292,85 @@
     reads across them.
   - **Fix 2: Local (In-Process) Cache** – Keep hot keys in each app server's own memory, so most
     reads never reach the cache cluster.
+
+### Redis Deep Dive
+
+- **Redis** – A *single-threaded, in-memory data structure store*. Its core command execution
+  processes one command at a time and supports atomic operations on structures such as strings,
+  hashes, lists, sets, sorted sets, streams and geospatial indexes. Newer versions can use threads
+  for I/O and background work.
+  - **Memory trade-off** – The working dataset must fit in memory, which gives low-latency access
+    but makes capacity more expensive than disk-based storage. Redis can also persist data to disk;
+    persistence settings affect recovery and the amount of acknowledged data that can be lost.
+
+- **Redis as a Cache** – Store a value under a key (e.g. `product:123`); use a *TTL* to bound how
+  long a cached value remains valid, and configure an eviction policy such as `allkeys-lru` to make
+  room when the memory limit is reached. A TTL handles expiration; it does not itself make Redis
+  evict data early to relieve memory pressure.
+
+- **Redis Cluster** – A cluster maps keys to 16,384 *hash slots*, with each node owning a subset.
+  Clients cache the slot-to-node map and route commands to the node that owns the key. Slots and
+  their keys can move when nodes are added; a `MOVED` response tells a client to refresh its map.
+  - **Hash Tags** – Put a shared value in `{braces}` to make related keys map to the same slot, e.g.
+    `{user:123}:posts` and `{user:123}:likes`; useful when a multi-key operation needs those keys
+    together.
+  - **Replication** – Replication is asynchronous: a primary can acknowledge a write before a
+    replica receives it, so failover can lose recent acknowledged writes. Replica reads can add
+    read capacity, with possible replication lag.
+  - **Interview tip** – Redis Cluster does not split an arbitrary query across nodes and merge the
+    results. Design keys and operations around the data that needs to be colocated.
+
+- **Distributed Locks** – A lock can be represented by a key acquired with an atomic conditional
+  write such as `SET lock:concert:343 <token> NX EX 30`. `NX` prevents taking an existing lock;
+  expiry helps release a lock after a crashed process.
+  - **Safe Release** – Delete only if the stored token still matches yours; otherwise an expired
+    lock may already belong to another process. Perform the check and delete atomically (e.g. with a
+    Lua script).
+  - **Caveat** – A paused process can continue after its lock expires, and asynchronous failover
+    can lose the lock write. Treat Redis locks as coordination aids, not a correctness guarantee;
+    protect critical invariants in the system of record (or use fencing tokens).
+
+- **Leaderboards** – A *sorted set* stores members with scores and keeps them ordered. `ZADD`
+  updates a member's score, so its rank changes as the score changes; rank queries can return the
+  highest-scoring members without sorting the whole dataset in application code.
+
+- **Rate Limiting** – A *fixed-window* limiter increments a counter for a user and time window;
+  reject when it exceeds the limit and expire the counter at the window boundary. Set the expiry
+  only on the first increment, and make increment-plus-expiry atomic (e.g. a Lua script).
+  - **Sliding Window** – A sorted set can store request timestamps as scores; remove timestamps
+    older than the window, count the remainder, and add the new request if under the limit. Run the
+    sequence atomically to avoid concurrent requests bypassing the limit.
+
+- **Proximity Search** – Geospatial commands such as `GEOADD` and `GEOSEARCH` store locations and
+  find members near a coordinate and radius.
+
+- **Streams and Work Queues** – Redis Streams are append-only logs. Producers append with `XADD`;
+  consumer groups distribute work, track pending entries and allow another worker to claim work
+  from a worker that stopped responding (`XCLAIM` / `XAUTOCLAIM`). A task can be processed twice,
+  so make handlers *idempotent*.
+  - **When to choose Streams** – Useful for modest background jobs or fan-out when Redis is already
+    part of the design. Prefer a durable broker such as Kafka when long retention, broad replay, or
+    durable high-throughput ordered processing is central.
+
+- **Pub/Sub** – `PUBLISH` sends a message to current subscribers of a channel; `SUBSCRIBE` listens.
+  It is simple and fast for ephemeral real-time updates, but delivery is *at most once*: an offline
+  subscriber misses messages because they are not persisted. Use Streams or a durable message
+  broker when consumers must catch up or replay.
+  - **Interview tip** – Native Pub/Sub avoids building and maintaining your own subscriber registry
+    and fan-out path. In Redis 7+, sharded Pub/Sub routes channels by slot to improve cluster
+    scaling.
+
+- **Hot Keys in Redis** – One popular key can overload its owning node while other nodes are idle.
+  - **Fix 1: Client-Side Cache** – Keep very hot values in app-server memory; this reduces Redis
+    reads but adds another cache to keep fresh (often with a short TTL).
+  - **Fix 2: Key Copies** – Duplicate the value under keys that map to different slots and spread
+    reads; writes must update each copy.
+  - **Fix 3: Read Replicas** – Can help only when clients are configured to read from replicas; they
+    do not spread writes for a hot key.
+
+- **When Not to Use Redis** – Avoid using it as the only system of record when its durability and
+  failover guarantees do not meet the requirement; avoid it when the working set cannot fit
+  economically in RAM, or when the design needs joins and flexible cross-key queries.
 
 ## Database Sharding
 
@@ -508,8 +682,10 @@ The PDF-derived notes above are preserved as provided. These points are candidat
 
 - Queue delivery guarantees, end-to-end “exactly-once,” and the general persistence/replication description depend on the queue implementation and its configuration.
 - The SQS Standard/FIFO summary and cache-library implementation examples may depend on current service behavior or library versions.
+- Kafka's single-broker throughput/storage estimate, behavior when no key is provided, `acks=all` requirements, and default retention may vary by hardware, client, version or configuration; verify before relying on exact values.
 - The Postgres capacity figures and S3-versus-DynamoDB storage prices are workload- and date-sensitive estimates; verify before relying on them.
 - Statements such as “almost never the right answer,” “default choice,” and the Facebook/MySQL graph example are interview heuristics or broad claims that may need context.
+- Redis command threading details, cluster behavior, persistence defaults and newer features (including sharded Pub/Sub) vary by Redis version and configuration; check the target deployment before relying on version-specific details.
 
 ## Continuation workflow
 
